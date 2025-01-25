@@ -1,0 +1,162 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Load data
+data = pd.read_excel('SET DATA.xlsx')
+
+# Convert 'AQI Index' to numeric and set Date as index
+data['AQI Index'] = pd.to_numeric(data['AQI Index'], errors='coerce')
+data.set_index('Date', inplace=True)
+
+# Check missing values
+missing_values = data.isnull().sum()
+missing_percentage = (missing_values / len(data)) * 100
+
+# Drop columns with >30% missing values
+columns_to_drop = ['PM10 (µg/m³)', 'NH3 (µg/m³)']
+data = data.drop(columns=columns_to_drop)
+
+# Time-series friendly imputation (forward-fill)
+data = data.ffill().bfill()  # Fill forward then backward
+
+# Verify no remaining missing values
+print(data.isnull().sum())
+
+# Sort index for time-series operations
+data = data.sort_index()
+
+# Save cleaned data
+data.to_excel('AQI.xlsx')
+
+# Visualization
+plt.figure(figsize=(14, 7))
+data['AQI Index'].plot(title='AQI Index Trend Over Time', color='darkgreen')
+plt.xlabel('Date')
+plt.ylabel('AQI Value')
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# Additional analysis (example correlation matrix)
+numeric_cols = data.select_dtypes(include=np.number).columns
+corr_matrix = data[numeric_cols].corr()
+
+plt.figure(figsize=(12, 8))
+plt.imshow(corr_matrix, cmap='coolwarm', interpolation='none')
+plt.colorbar()
+plt.xticks(range(len(corr_matrix)), corr_matrix.columns, rotation=90)
+plt.yticks(range(len(corr_matrix)), corr_matrix.columns)
+plt.title('Feature Correlation Matrix')
+plt.tight_layout()
+plt.show()
+
+series = data['AQI Index']
+series
+
+print(series.isnull().sum())
+
+# Rolling average for trend
+rolling_mean = series.rolling(window=12).mean()
+
+plt.figure(figsize=(8,4))
+plt.plot(series, label='Original Series')
+plt.plot(rolling_mean, color='red', label='Trend (Rolling Mean)')
+plt.legend()
+plt.show()
+
+data= data.copy()
+
+data['year'] = data.index.year
+data['month'] = data.index.month_name()
+
+month_order = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+
+for month in month_order:
+    monthly_data = data[data['month'] == month]
+    
+    monthly_avg = monthly_data.groupby('year')['AQI Index'].mean()
+    
+    # Plot the data
+    plt.figure(figsize=(5, 3))
+    monthly_avg.plot(kind='line', marker='o', color='b')
+    plt.title(f'{month} AQI Across Years')
+    plt.xlabel('Year')
+    plt.ylabel('Average AQI')
+    plt.tight_layout()
+    plt.show()
+
+mean_aqi_by_month = data.groupby('month')['AQI Index'].mean()
+
+month_order = ['January', 'February', 'March', 'April', 'May', 'June', 
+               'July', 'August', 'September', 'October', 'November', 'December']
+mean_aqi_by_month = mean_aqi_by_month.reindex(month_order)
+
+month_to_month_change = mean_aqi_by_month.diff()
+
+colors = ['green' if x < 0 else 'red' for x in month_to_month_change]
+
+month_to_month_change.plot(kind='bar', color=colors, figsize=(8, 4))
+
+plt.title('Month-to-Month AQI Change')
+plt.xlabel('Month')
+plt.ylabel('AQI Change')
+plt.axhline(0, color='black', linestyle='--', linewidth=0.8)  # Line at y=0 for reference
+plt.xticks(rotation=45)
+plt.tight_layout()
+
+plt.show()
+
+from statsmodels.tsa.stattools import adfuller
+
+# Perform ADF test
+result = adfuller(series)
+print('ADF Statistic:', result[0])
+print('\np-value:', result[1])
+if result[1] < 0.05:
+    print("\nThe series is stationary.")
+else:
+    print("\nThe series is not stationary.")
+
+from pandas.plotting import autocorrelation_plot
+
+autocorrelation_plot(series)
+plt.show()
+
+from hurst import compute_Hc
+
+H, c, data = compute_Hc(series, kind='change', simplified=True)
+print(f"Hurst Exponent: {H}")
+
+if H < 0.5:
+    print("\nThe series shows mean-reverting behavior.")
+elif H == 0.5:
+    print("\nThe series is a random walk.")
+else:
+    print("\nThe series shows long-term dependence.")
+
+from scipy.stats import linregress
+
+x = range(len(series))
+slope, intercept, r_value, p_value, std_err = linregress(x, series)
+line = slope * x + intercept
+
+plt.scatter(x, series, label='Data')
+plt.plot(x, line, color='red', label='Linear Fit')
+plt.legend()
+plt.show()
+
+print(f"R-squared: {r_value**2}")
+
+from statsmodels.tsa.seasonal import seasonal_decompose
+
+# Decompose the time series
+result = seasonal_decompose(series, model='additive', period=365)
+result.plot()
+plt.show()
+
+from scipy.stats import skew, kurtosis
+print(skew(series))
+
+print(kurtosis(series))
+
