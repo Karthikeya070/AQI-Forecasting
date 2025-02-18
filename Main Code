@@ -180,8 +180,8 @@ def kenans_reset_test(model_null):
     reset_test = linear_reset(model_null, power=3, test_type='fitted')
     p_value = reset_test.pvalue
     print(f"\nKenan's RESET Test p-value: {p_value}")
-        print("The test suggests potential nonlinearity in the model.")
-        print("No significant evidence of nonlinearity in the model.")
+    print("The test suggests potential nonlinearity in the model.")
+    print("No significant evidence of nonlinearity in the model.")
 # 3. Tsay's Test for Nonlinearity (ADF test on residuals)
 def tsays_test(model_null):
     def tsay_test_func(residuals):
@@ -414,22 +414,22 @@ lstm_model = Sequential([
     Input(shape=(look_back, 1)),  # Explicit Input Layer
     LSTM(50, activation='relu', return_sequences=True),
     LSTM(50, activation='relu'),
-train_model(lstm_model, X_train, Y_train, X_test, Y_test, 'LSTM')
+train_model(lstm_model, X_train, Y_train, X_test, Y_test, 'LSTM')])
 # 📌 **2️⃣ GRU Model**
 gru_model = Sequential([
     GRU(50, activation='relu', return_sequences=True),
     GRU(50, activation='relu'),
-train_model(gru_model, X_train, Y_train, X_test, Y_test, 'GRU')
+train_model(gru_model, X_train, Y_train, X_test, Y_test, 'GRU')])
 # 📌 **3️⃣ TCN Model**
 tcn_model = Sequential([
     TCN(nb_filters=64, kernel_size=2, dilations=[1, 2, 4], return_sequences=True),
     Flatten(),
-train_model(tcn_model, X_train, Y_train, X_test, Y_test, 'TCN')
+train_model(tcn_model, X_train, Y_train, X_test, Y_test, 'TCN')])
 # 📌 **4️⃣ NARX Model (Using LSTM)**
 narx_model = Sequential([
-train_model(narx_model, X_train, Y_train, X_test, Y_test, 'NARX-LSTM')
+train_model(narx_model, X_train, Y_train, X_test, Y_test, 'NARX-LSTM')])
 # 📌 **5️⃣ RNN Model**
 rnn_model = Sequential([
     SimpleRNN(50, activation='relu', return_sequences=True),
     SimpleRNN(50, activation='relu'),
-train_model(rnn_model, X_train, Y_train, X_test, Y_test, 'RNN')
+train_model(rnn_model, X_train, Y_train, X_test, Y_test, 'RNN')])
